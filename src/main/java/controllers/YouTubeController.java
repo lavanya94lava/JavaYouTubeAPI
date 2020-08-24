@@ -32,18 +32,18 @@ public class YouTubeController {
     @RequestMapping(value = "/postComment", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
     public CommentThread postComment(@RequestBody JSONObject jsonObject) throws Exception {
         String videoId = (String)jsonObject.get("video_id");
+        String commentBody = (String)jsonObject.get("comment_body");
 
         // Create a comment snippet with text.
         CommentSnippet commentSnippet = new CommentSnippet();
-        commentSnippet.setTextOriginal("hi");
+        commentSnippet.setTextOriginal(commentBody);
 
 
         // Create a top-level comment with snippet.
         Comment topLevelComment = new Comment();
         topLevelComment.setSnippet(commentSnippet);
 
-        // Create a comment thread snippet with channelId and top-level
-        // comment.
+
         CommentThreadSnippet commentThreadSnippet = new CommentThreadSnippet();
         commentThreadSnippet.setVideoId(videoId);
         commentThreadSnippet.setTopLevelComment(topLevelComment);
@@ -60,6 +60,24 @@ public class YouTubeController {
 
     }
 
-    @RequestMapping(value = "/replyToComment", method = RequestMethod.POST)
-    public 
+    @RequestMapping(value = "/replyToComment", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public Comment replyToComment(@RequestBody JSONObject jsonObject) throws Exception{
+
+        // Create a comment snippet with text.
+        CommentSnippet commentSnippet = new CommentSnippet();
+        commentSnippet.setVideoId((String)jsonObject.get("video_id"));
+        String text = (String)jsonObject.get("comment_body");
+        commentSnippet.setTextOriginal(text);
+        commentSnippet.setParentId("parent_id");
+
+        //create a comment with a snippet
+        Comment comment = new Comment();
+        comment.setSnippet(commentSnippet);
+
+        // Call the YouTube Data API's comments.insert method to reply
+        // to a comment.
+
+        Comment commentInsertResponse = youTubeService.getService().comments().insert("snippet", comment).execute();
+        return comment;
+    }
 }
