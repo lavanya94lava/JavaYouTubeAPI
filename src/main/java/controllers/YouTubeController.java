@@ -2,14 +2,16 @@ package controllers;
 
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.*;
+import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.json.simple.JSONObject;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import services.YouTubeService;
+
+import java.util.List;
 
 @RestController
 public class YouTubeController {
@@ -63,21 +65,53 @@ public class YouTubeController {
     @RequestMapping(value = "/replyToComment", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
     public Comment replyToComment(@RequestBody JSONObject jsonObject) throws Exception{
 
-        // Create a comment snippet with text.
-        CommentSnippet commentSnippet = new CommentSnippet();
-        commentSnippet.setVideoId((String)jsonObject.get("video_id"));
+        String videoId = (String)jsonObject.get("video_id");
         String text = (String)jsonObject.get("comment_body");
-        commentSnippet.setTextOriginal(text);
-        commentSnippet.setParentId("parent_id");
 
-        //create a comment with a snippet
-        Comment comment = new Comment();
-        comment.setSnippet(commentSnippet);
+        // Call the YouTube Data API's commentThreads.list method to
+        // retrieve video comment threads.
+        CommentThreadListResponse videoCommentsListResponse = youTubeService.getService().commentThreads()
+                .list("snippet").setVideoId(videoId).setTextFormat("plainText").execute();
+        List<CommentThread> videoComments = videoCommentsListResponse.getItems();
 
-        // Call the YouTube Data API's comments.insert method to reply
-        // to a comment.
+        Comment commentInsertResponse = null;
+        if (videoComments.isEmpty()) {
+            System.out.println("Can't get video comments.");
+        } else {
+            // Print information from the API response.
+            System.out
+                    .println("\n================== Returned Video Comments ==================\n");
+            for (CommentThread videoComment : videoComments) {
+                CommentSnippet snippet = videoComment.getSnippet().getTopLevelComment()
+                        .getSnippet();
+                System.out.println("  - Author: " + snippet.getAuthorDisplayName());
+                System.out.println("  - Comment: " + snippet.getTextDisplay());
+                System.out
+                        .println("\n-------------------------------------------------------------\n");
+            }
+            CommentThread firstComment = videoComments.get(0);
 
-        Comment commentInsertResponse = youTubeService.getService().comments().insert("snippet", comment).execute();
-        return comment;
+            // Will use this thread as parent to new reply.
+            String parentId = firstComment.getId();
+
+            // Create a comment snippet with text.
+            CommentSnippet commentSnippet = new CommentSnippet();
+            commentSnippet.setTextOriginal(text);
+            commentSnippet.setParentId(parentId);
+
+            // Create a comment with snippet.
+            Comment comment = new Comment();
+            comment.setSnippet(commentSnippet);
+
+            // Call the YouTube Data API's comments.insert method to reply
+            // to a comment.
+            // (If the intention is to create a new top-level comment,
+            // commentThreads.insert
+            // method should be used instead.)
+            commentInsertResponse = youTubeService.getService().comments().insert("snippet", comment)
+                    .execute();
+
+        }
+        return commentInsertResponse;
     }
 }
