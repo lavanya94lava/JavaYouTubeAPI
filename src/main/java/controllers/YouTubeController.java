@@ -105,9 +105,6 @@ public class YouTubeController {
 
             // Call the YouTube Data API's comments.insert method to reply
             // to a comment.
-            // (If the intention is to create a new top-level comment,
-            // commentThreads.insert
-            // method should be used instead.)
             commentInsertResponse = youTubeService.getService().comments().insert("snippet", comment)
                     .execute();
 

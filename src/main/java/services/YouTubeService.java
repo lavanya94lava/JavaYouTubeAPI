@@ -40,9 +40,9 @@ public class YouTubeService {
         InputStream in = Thread.currentThread().getContextClassLoader().getResourceAsStream("client_secrets.json");
         System.out.println("innnnnnnnnn "+ new ClassPathResource(
                 "client_secrets.json").getInputStream());
-        GoogleClientSecrets googleClientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader         (in));
-        GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(httpTransport, JSON_FACTORY,        googleClientSecrets, SCOPES).build();
-        Credential credential = new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize           ("user");
+        GoogleClientSecrets googleClientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
+        GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(httpTransport, JSON_FACTORY,googleClientSecrets, SCOPES).build();
+        Credential credential = new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize("user");
         return  credential;
     }
 }
